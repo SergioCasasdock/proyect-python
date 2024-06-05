@@ -1,0 +1,96 @@
+parameters:
+  - name: projectName
+    type: string
+  - name: environment
+    type: string
+    default: ""
+  - name: namespace
+    type: string
+    default: ""
+  - name: sonarToken
+    type: string
+    default: ""
+  - name: country
+    type: string
+    default: ""
+stages:
+  - stage: CI-pipeline
+    pool:
+      vmImage: ubuntu-latest
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: "3.18"
+      addToPath: true
+      architecture: "x64"
+  - task: DockerInstaller@0
+    inputs:
+      dockerVersion: "17.09.0-ce"
+  - task: HelmInstaller@1
+    displayName: "Install Helm 3.8.0"
+    inputs:
+      helmVersionToInstall: 3.8.0
+  - script: |
+      git clone https://$(tokengithub):@github.com/SergioCasasdock/proyect-python.git main
+      cd proyect-python
+    displayName: "Downland Github Proyect"
+  - script: |
+      pip3 install -r requirements.txt
+    displayName: "Install dependency"
+  - script: |
+      pip install --upgrade Flask
+    displayName: "Upgrade flask"
+  - script: |
+      python3 -m unittest discover -v
+    displayName: "Unit Test protect"
+  - script: |
+      docker login $(registryServerName) -u $(registryLogin) -p $(registryPassword)
+    displayName: "Docker login"
+  - script: |
+      docker build -t sergiokube/protectpy:$(build.buildId) .
+    displayName: "Docker build"
+  - script: |
+      docker push sergiokube/protectpy:$(build.buildId)
+    displayName: "Docker build"
+  - script: |
+      helm package helm/${{ parameters.projectName }} --revision=$(build.buildId)
+    displayName: "helm package proyect"
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish Artifact files"
+    inputs:
+      inputs:
+      pathToPublish: $(System.DefaultWorkingDirectory)/helm/${{ parameters.projectName }}-0.1.0.tgz
+      artifactName: "${{ parameters.projectName }}:$(build.buildId)"
+      publishLocation: "pipeline"
+
+  - stage: CD-pipeline
+    pool:
+      vmImage: ubuntu-latest
+    dependsOn: CI-pipeline
+    jobs:
+      - job: publish artefact
+        timeoutInMinutes: 10
+        steps:
+          - task: KubectlInstaller@0
+            displayName: Kubectl installer
+            inputs:
+              kubectlVersion: v1.28.2
+
+          - task: HelmInstaller@1
+            displayName: "Install Helm 3.8.0"
+            inputs:
+              helmVersionToInstall: 3.8.0
+
+          - task: Kubernetes@1
+            displayName: "kubectl validate k8s version"
+            name: kubectlgetversion
+            inputs:
+              command: version
+              versionSpec: 1.27.9
+          - script: |
+              az account set --subscription $(azuresuscription)
+              az aks get-credentials --resource-group $(azureRG) --name $(azureClustername) --overwrite-existing --admin
+              kubectl config current-context
+            displayName: "configure ask cluster azure"
+          - script: |
+              helm upgrade ${{ parameters.projectName }} ${{ parameters.projectName }}-0.1.0.tgz --namespace ${{ parameters.namespace }}
+            displayName: "configure ask cluster azure"
