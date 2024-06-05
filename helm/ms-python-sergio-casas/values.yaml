@@ -1,0 +1,44 @@
+replicaCount: 1
+
+image:
+  repository: sergiokube/protectpy
+  tag: 1.0.7
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+livenessProbe:
+  httpGet:
+    path: /getapplication
+    port: http
+readinessProbe:
+  httpGet:
+    path: /getapplication
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+fullnameOverride: ""
+imagePullSecrets: []
+nameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
