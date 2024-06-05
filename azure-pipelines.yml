@@ -9,7 +9,7 @@ resources:
       name: "SergioCasasdock/proyect-python"
 
 extends:
-  template: template-pipeline-azuredevops/template.yml@main
+  template: template.yml@main
   parameters:
     projectName: ms-python-sergio-casas
     environment: prod
