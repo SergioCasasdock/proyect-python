@@ -1,0 +1,17 @@
+trigger:
+  - dev
+  - master
+
+resources:
+  repositories:
+    - repository: Pipelines
+      type: git
+      name: "SergioCasasdock/proyect-python"
+
+extends:
+  template: template-pipeline-azuredevops/template.yml@main
+  parameters:
+    projectName: ms-python-sergio-casas
+    environment: prod
+    namespace: tech-prod
+    country: col
