@@ -3,8 +3,8 @@ app = Flask(__name__)
 
 @app.route('/getapplication')
 def getapplication():
-    return 'Running status K8s'
+    return '#########Running status K8s############'
 
-@app.route('/Sergiocasas')
+@app.route('/sergioCasas')
 def getWeatherOnline():
-    return 'Running test sergio casas'
+    return '#######Running sergio casas############'
